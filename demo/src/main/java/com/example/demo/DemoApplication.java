@@ -1,13 +1,13 @@
-package com.example.springbatch_demo;
+package com.example.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SpringbatchDemoApplication {
+public class DemoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SpringbatchDemoApplication.class, args);
+		SpringApplication.run(DemoApplication.class, args);
 	}
 
 }
