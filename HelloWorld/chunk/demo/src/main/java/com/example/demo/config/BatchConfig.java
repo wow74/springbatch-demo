@@ -1,7 +1,8 @@
 package com.example.demo.config;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
+import com.example.demo.listener.HelloJobListener;
+import com.example.demo.listener.HelloStepListener;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
@@ -26,13 +27,20 @@ public class BatchConfig {
   @Autowired
   private ItemWriter<String> writer;
 
+  @Autowired
+  private JobExecutionListener jobListener;
+
+  @Autowired
+  private StepExecutionListener stepListener;
+
   @Bean
   public Step ChunkStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
     return new StepBuilder("HelloChunkStep", jobRepository)
-            .<String, String>chunk(2, transactionManager)
+            .<String, String>chunk(1, transactionManager)
             .reader(reader)
             .processor(processor)
             .writer(writer)
+            .listener(stepListener)
             .build();
   }
 
@@ -41,6 +49,7 @@ public class BatchConfig {
     return new JobBuilder("HelloCHunkJob", jobRepository)
             .incrementer(new RunIdIncrementer())
             .start(ChunkStep(jobRepository, transactionManager))
+            .listener(jobListener)
             .build();
   }
 }
