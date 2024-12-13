@@ -3,7 +3,9 @@ package com.example.demo.config;
 import com.example.demo.tasklet.HelloTasklet;
 import com.example.demo.tasklet.HelloTasklet2;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParametersValidator;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
@@ -24,6 +26,24 @@ public class BatchConfig {
   @Autowired
   @Qualifier("HelloTasklet2")
   private HelloTasklet2 helloTasklet2;
+
+  @Bean
+  public JobParametersValidator defaultValidator() {
+    DefaultJobParametersValidator validator = new DefaultJobParametersValidator();
+
+    // 必須
+    String[] requiredKey = new String[]{"run.id", "require1"};
+    validator.setRequiredKeys(requiredKey);
+
+    // 任意
+    String[] optionalKeys = new String[]{"option1"};
+    validator.setOptionalKeys(optionalKeys);
+
+    // 必須と任意に重複がないことを確認
+    validator.afterPropertiesSet();
+    return validator;
+
+  }
 
   // spring3系
   @Bean
@@ -47,6 +67,7 @@ public class BatchConfig {
             .incrementer(new RunIdIncrementer()) // IDのインクリメント
             .start(sampleStep(jobRepository, transactionManager)) // 最初のstep
             .next(sampleStep2(jobRepository, transactionManager))
+            .validator(defaultValidator())
             .build();  // Jobの生成
   }
 }
