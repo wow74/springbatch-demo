@@ -2,9 +2,13 @@ package com.example.demo.config;
 
 import com.example.demo.tasklet.HelloTasklet;
 import com.example.demo.tasklet.HelloTasklet2;
+import com.example.demo.validator.OptionalValidator;
+import com.example.demo.validator.RequiredValidator;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.JobParametersValidator;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.CompositeJobParametersValidator;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
@@ -15,6 +19,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 public class BatchConfig {
@@ -28,6 +36,7 @@ public class BatchConfig {
   private HelloTasklet2 helloTasklet2;
 
   @Bean
+  // パラメータ名のみ必須チェック(値が入っているかはみない)
   public JobParametersValidator defaultValidator() {
     DefaultJobParametersValidator validator = new DefaultJobParametersValidator();
 
@@ -42,6 +51,20 @@ public class BatchConfig {
     // 必須と任意に重複がないことを確認
     validator.afterPropertiesSet();
     return validator;
+
+  }
+
+  @Bean
+  // 値チェックも行う
+  public JobParametersValidator compositeValidator() {
+    List<JobParametersValidator> validators = new ArrayList<>();
+    validators.add(defaultValidator());
+    validators.add(new RequiredValidator());
+    validators.add(new OptionalValidator());
+
+    CompositeJobParametersValidator compositeValidator = new CompositeJobParametersValidator();
+    compositeValidator.setValidators(validators);
+    return compositeValidator;
 
   }
 
@@ -67,7 +90,8 @@ public class BatchConfig {
             .incrementer(new RunIdIncrementer()) // IDのインクリメント
             .start(sampleStep(jobRepository, transactionManager)) // 最初のstep
             .next(sampleStep2(jobRepository, transactionManager))
-            .validator(defaultValidator())
+//            .validator(defaultValidator())
+            .validator(compositeValidator())
             .build();  // Jobの生成
   }
 }
