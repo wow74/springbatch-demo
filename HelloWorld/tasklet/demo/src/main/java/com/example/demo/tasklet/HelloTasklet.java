@@ -1,15 +1,15 @@
 package com.example.demo.tasklet;
 
+import com.example.demo.property.SampleProperty;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.ExecutionException;
 
 @Component("HelloTasklet")
 @StepScope
@@ -20,6 +20,9 @@ public class HelloTasklet implements Tasklet {
 
   @Value("#{jobParameters['option1']}")
   private String option1;
+
+  @Autowired
+  private SampleProperty sampleProperty;
 
   @Override
   public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -40,6 +43,7 @@ public class HelloTasklet implements Tasklet {
 
     System.out.println("require1: " + require1);
     System.out.println("option1: " + option1);
+    System.out.println("sample.property: " + sampleProperty.getSampleProperty());
 
     return RepeatStatus.FINISHED;
   }
