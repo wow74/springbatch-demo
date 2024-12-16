@@ -1,11 +1,18 @@
 package com.example.demo.domain.model;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class Employee {
+  @NotNull
   private Integer id;
+
+  @NotNull
   private String name;
+
+  @Min(20)
   private Integer age;
   private Integer gender;
   private String genderString;
