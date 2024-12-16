@@ -9,12 +9,14 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.support.CompositeItemProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class BaseConfig {
 
@@ -33,6 +35,10 @@ public class BaseConfig {
 
   @Autowired
   protected SampleProperty sampleProperty;
+
+  @Autowired
+  @Qualifier("ExistsCheckProcessor")
+  protected ItemProcessor<Employee, Employee> existsCheckProcessor;
 
   @Bean
   @StepScope
@@ -53,5 +59,13 @@ public class BaseConfig {
             })
             .build();
 
+  }
+
+  @Bean
+  @StepScope
+  public ItemProcessor<Employee, Employee> compositeProcessor() {
+    CompositeItemProcessor<Employee, Employee> compositeItemProcessor = new CompositeItemProcessor<>();
+    compositeItemProcessor.setDelegates(Arrays.asList(this.existsCheckProcessor, this.genderConvertProcessor)); // 実行したい順に格納
+    return compositeItemProcessor;
   }
 }

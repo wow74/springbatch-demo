@@ -43,7 +43,7 @@ public class JdbcImportBatchConfig extends BaseConfig {
     return new StepBuilder("CsvImportJdbcStep", jobRepository)
             .<Employee, Employee>chunk(10, transactionManager)
             .reader(csvReader()).listener(this.readListener)
-            .processor(genderConvertProcessor).listener(this.processListener)
+            .processor(compositeProcessor()).listener(this.processListener)
             .writer(jdbcWriter()).listener(this.writeListener)
             .build();
   }
