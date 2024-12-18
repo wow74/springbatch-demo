@@ -2,7 +2,7 @@
 spring:
   batch:
     job:
-      name: ExportJdbcPagingJob
+      name: ExportMybatisCursorJob
     jdbc:
       initialize-schema: always
       schema: classpath:org/springframework/batch/core/schema-mysql.sql
@@ -15,3 +15,7 @@ spring:
 logging:
   level:
     '[com.example.demo': debug
+
+mybatis:
+  mapper-locations: classpath*:/mapper/mysqls/*.xml
+  type-aliases-package: com.example.demo.domain.model
