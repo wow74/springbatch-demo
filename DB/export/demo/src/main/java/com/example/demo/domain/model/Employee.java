@@ -1,13 +1,20 @@
 package com.example.demo.domain.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
 import lombok.Data;
 
 @Data
+@Entity
 public class Employee {
+  @Id
   private Integer id;
   private String name;
   private  Integer age;
   private  Integer gender;
+
+  @Transient
   private String genderString;
 
   public void convertGenderIntToString() {

@@ -2,7 +2,7 @@
 spring:
   batch:
     job:
-      name: ExportMybatisPagingJob
+      name: ExportJpaCursorJob
     jdbc:
       initialize-schema: always
       schema: classpath:org/springframework/batch/core/schema-mysql.sql
