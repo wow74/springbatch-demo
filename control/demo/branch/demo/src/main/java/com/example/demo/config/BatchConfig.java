@@ -1,13 +1,16 @@
 package com.example.demo.config;
 
+import com.example.demo.decider.SampleDecider;
 import com.example.demo.listener.TaskletStepListener;
 import com.example.demo.tasklet.FailTasklet;
 import com.example.demo.tasklet.FirstTasklet;
+import com.example.demo.tasklet.RandomTasklet;
 import com.example.demo.tasklet.SuccessTasklet;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.job.flow.FlowExecutionStatus;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
@@ -36,6 +39,13 @@ public class BatchConfig {
   @Qualifier("TaskletStepListener")
   private TaskletStepListener taskletStepListener;
 
+  @Autowired
+  @Qualifier("RandomTasklet")
+  private RandomTasklet randomTasklet;
+
+  @Autowired
+  private SampleDecider sampleDecider;
+
   @Bean
   public Step firstStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
     return new StepBuilder("FirstStep", jobRepository)
@@ -61,6 +71,14 @@ public class BatchConfig {
   }
 
   @Bean
+  public Step randomStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+    return new StepBuilder("RandomStep", jobRepository)
+            .tasklet(randomTasklet, transactionManager)
+            .listener(taskletStepListener)
+            .build();
+  }
+
+  @Bean
   public Job taskletBranchJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) throws Exception {
     return new JobBuilder("TaskletBranchJob", jobRepository)
             .incrementer(new RunIdIncrementer())
@@ -70,6 +88,22 @@ public class BatchConfig {
             .from(firstStep(jobRepository, transactionManager))
             .on(ExitStatus.FAILED.getExitCode())
             .to(failStep(jobRepository, transactionManager)) // failedの場合はfailStep()を実行
+            .end()
+            .build();
+  }
+
+  @Bean
+  public Job randomTaskletBranchJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) throws Exception {
+    return new JobBuilder("RandomTaskletBranchJob", jobRepository)
+            .incrementer(new RunIdIncrementer())
+            .start(randomStep(jobRepository, transactionManager))
+            .next(sampleDecider)
+            .from(sampleDecider)
+            .on(FlowExecutionStatus.COMPLETED.getName())
+            .to(successStep(jobRepository, transactionManager))
+            .from(sampleDecider)
+            .on(FlowExecutionStatus.FAILED.getName())
+            .to(failStep(jobRepository, transactionManager))
             .end()
             .build();
   }
