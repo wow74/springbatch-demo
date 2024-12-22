@@ -27,7 +27,6 @@ import javax.sql.DataSource;
 @Configuration
 public class BatchConfig {
 
-
   @Autowired
   private EmployeeReader employeeReader;
 
@@ -43,6 +42,7 @@ public class BatchConfig {
     return new DataSourceProperties();
   }
 
+  // メタ情報
   @BatchDataSource
   @Bean
   DataSource h2DataSource() {
@@ -57,11 +57,6 @@ public class BatchConfig {
     return mysqlProperties()
             .initializeDataSourceBuilder()
             .build();
-  }
-
-  @Bean
-  JdbcTemplate jdbcTemplate() {
-    return new JdbcTemplate(mysqlDataSource());
   }
 
   private static final String SQL = "insert into Employee(id, name, age, gender)"
@@ -93,21 +88,4 @@ public class BatchConfig {
             .start(sampleStep(jobRepository, transactionManager))
             .build();
   }
-
-//  @Bean
-//  Job sampleJob(JobRepository jobRepository, PlatformTransactionManager mainTxManager) {
-//    System.out.println(mainTxManager);
-//    Step step = new StepBuilder("sampleStep", jobRepository)
-//            .tasklet((contribution, chunkContext) -> {
-//              System.out.println("asdf");
-//              jdbcTemplate().update("insert into Employee(id, name, age, gender) values (1, 'user', 20, 1)");
-//
-//              return RepeatStatus.FINISHED;
-//            }, mainTxManager)
-//            .build();
-//
-//    return new JobBuilder("sampleJob", jobRepository)
-//            .start(step)
-//            .build();
-//  }
 }
