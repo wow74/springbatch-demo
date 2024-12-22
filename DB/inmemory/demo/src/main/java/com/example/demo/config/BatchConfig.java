@@ -1,11 +1,18 @@
 package com.example.demo.config;
 
+import com.example.demo.chunk.EmployeeReader;
+import com.example.demo.domain.Employee;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.batch.BatchDataSource;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -19,6 +26,10 @@ import javax.sql.DataSource;
 
 @Configuration
 public class BatchConfig {
+
+
+  @Autowired
+  private EmployeeReader employeeReader;
 
   @Bean
   @ConfigurationProperties("spring.datasource.h2")
@@ -53,20 +64,50 @@ public class BatchConfig {
     return new JdbcTemplate(mysqlDataSource());
   }
 
+  private static final String SQL = "insert into Employee(id, name, age, gender)"
+          + " values(:id, :name, :age, :gender)";
+
   @Bean
-  Job sampleJob(JobRepository jobRepository, PlatformTransactionManager mainTxManager) {
-    System.out.println(mainTxManager);
-    Step step = new StepBuilder("sampleStep", jobRepository)
-            .tasklet((contribution, chunkContext) -> {
-              System.out.println("asdf");
-              jdbcTemplate().update("insert into Employee(id, name, age, gender) values (1, 'user', 20, 1)");
-
-              return RepeatStatus.FINISHED;
-            }, mainTxManager)
-            .build();
-
-    return new JobBuilder("sampleJob", jobRepository)
-            .start(step)
+  @StepScope
+  public JdbcBatchItemWriter<Employee> jdbcWriter() {
+    return new JdbcBatchItemWriterBuilder<Employee>()
+            .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
+            .sql(SQL)
+            .dataSource(mysqlDataSource())
             .build();
   }
+
+  @Bean
+  public Step sampleStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+    return new StepBuilder("sampleStep", jobRepository)
+            .<Employee, Employee>chunk(1, transactionManager)
+            .reader(employeeReader)
+            .writer(jdbcWriter())
+            .build();
+  }
+
+  @Bean
+  public Job sampleJob(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+    return new JobBuilder("sampleJob", jobRepository)
+            .incrementer(new RunIdIncrementer())
+            .start(sampleStep(jobRepository, transactionManager))
+            .build();
+  }
+
+//  @Bean
+//  Job sampleJob(JobRepository jobRepository, PlatformTransactionManager mainTxManager) {
+//    System.out.println(mainTxManager);
+//    Step step = new StepBuilder("sampleStep", jobRepository)
+//            .tasklet((contribution, chunkContext) -> {
+//              System.out.println("asdf");
+//              jdbcTemplate().update("insert into Employee(id, name, age, gender) values (1, 'user', 20, 1)");
+//
+//              return RepeatStatus.FINISHED;
+//            }, mainTxManager)
+//            .build();
+//
+//    return new JobBuilder("sampleJob", jobRepository)
+//            .start(step)
+//            .build();
+//  }
 }
